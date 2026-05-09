@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIKETIFY | Premium Global Ticket Resale</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & Babel for JSX -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+        
+        :root {
+            --ucl-blue: #003399;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Marquee Animation */
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .animate-marquee {
+            animation: marquee 40s linear infinite;
+        }
+
+        .marquee-container:hover .animate-marquee {
+            animation-play-state: paused;
+        }
+
+        /* Custom scrollbar for premium feel */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const App = () => {
+            const [activePage, setActivePage] = useState('home');
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+            // Re-initialize icons whenever the DOM updates
+            useEffect(() => {
+                lucide.createIcons();
+            }, [activePage, isMenuOpen]);
+
+            const navigate = (page) => {
+                setActivePage(page);
+                setIsMenuOpen(false);
+                window.scrollTo(0, 0);
+            };
+
+            const Navbar = () => (
+                <nav className="fixed top-0 w-full z-50 glass border-b border-slate-200">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between h-20 items-center">
+                            <div className="flex items-center cursor-pointer group" onClick={() => navigate('home')}>
+                                <div className="bg-blue-600 p-2 rounded-xl mr-3 group-hover:rotate-12 transition-transform">
+                                    <i data-lucide="ticket" className="text-white w-6 h-6"></i>
+                                </div>
+                                <span className="text-2xl font-black tracking-tighter text-slate-900 uppercase">Tiketify</span>
+                            </div>
+
+                            <div className="hidden md:flex space-x-10 items-center">
+                                <button onClick={() => navigate('home')} className={`text-sm font-bold uppercase tracking-wider ${activePage === 'home' ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'}`}>Home</button>
+                                <button onClick={() => navigate('champions-league')} className={`text-sm font-bold uppercase tracking-wider ${activePage === 'champions-league' ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'}`}>UCL Final 2026</button>
+                                <button className="bg-slate-900 text-white px-7 py-2.5 rounded-full text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all">Member Login</button>
+                            </div>
+
+                            <div className="md:hidden">
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-slate-900 p-2">
+                                    <i data-lucide={isMenuOpen ? "x" : "menu"}></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {/* Mobile Menu */}
+                    {isMenuOpen && (
+                        <div className="md:hidden bg-white border-b p-6 space-y-4 animate-fade-in">
+                            <button onClick={() => navigate('home')} className="block w-full text-left font-bold text-slate-600">Home</button>
+                            <button onClick={() => navigate('champions-league')} className="block w-full text-left font-bold text-slate-600">UCL Final 2026</button>
+                            <button className="block w-full bg-slate-900 text-white py-4 rounded-2xl font-black">LOGIN</button>
+                        </div>
+                    )}
+                </nav>
+            );
+
+            const Footer = () => (
+                <footer className="bg-slate-950 text-white pt-24 pb-12">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-16 mb-20">
+                            <div className="md:col-span-5">
+                                <div className="flex items-center mb-8">
+                                    <div className="bg-blue-600 p-2 rounded-xl mr-3">
+                                        <i data-lucide="ticket" className="text-white w-6 h-6"></i>
+                                    </div>
+                                    <span className="text-3xl font-black tracking-tighter uppercase">Tiketify</span>
+                                </div>
+                                <p className="text-slate-400 text-lg leading-relaxed max-w-md">
+                                    TIKETIFY is the global leader in high-stakes event access. We specialize in sourcing verified tickets for the world's most exclusive sporting and cultural moments, ensuring 100% authenticity for every fan.
+                                </p>
+                                <div className="flex space-x-4 mt-8">
+                                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-blue-600 cursor-pointer transition-colors"><i data-lucide="twitter" className="w-5 h-5"></i></div>
+                                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-blue-600 cursor-pointer transition-colors"><i data-lucide="instagram" className="w-5 h-5"></i></div>
+                                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-blue-600 cursor-pointer transition-colors"><i data-lucide="linkedin" className="w-5 h-5"></i></div>
+                                </div>
+                            </div>
+                            
+                            <div className="md:col-span-3">
+                                <h4 className="text-sm font-black uppercase tracking-[0.2em] text-blue-500 mb-8">Quick Links</h4>
+                                <ul className="space-y-4 text-slate-300 font-medium">
+                                    <li><button onClick={() => navigate('home')} className="hover:text-white transition-colors">Our Story</button></li>
+                                    <li><button onClick={() => navigate('champions-league')} className="hover:text-white transition-colors">UEFA Champions League</button></li>
+                                    <li><a href="#" className="hover:text-white transition-colors">Sell Your Tickets</a></li>
+                                    <li><a href="#" className="hover:text-white transition-colors">Guarantee Policy</a></li>
+                                    <li><a href="#" className="hover:text-white transition-colors">Partner Program</a></li>
+                                </ul>
+                            </div>
+
+                            <div className="md:col-span-4">
+                                <h4 className="text-sm font-black uppercase tracking-[0.2em] text-blue-500 mb-8">Global Contact</h4>
+                                <div className="space-y-6">
+                                    <div className="flex items-start">
+                                        <i data-lucide="map-pin" className="text-blue-500 mr-4 shrink-0"></i>
+                                        <p className="text-slate-300">Level 42, International Trade Center<br/>London, United Kingdom</p>
+                                    </div>
+                                    <div className="flex items-center">
+                                        <i data-lucide="mail" className="text-blue-500 mr-4 shrink-0"></i>
+                                        <p className="text-slate-300">global-hq@tiketify.com</p>
+                                    </div>
+                                    <div className="flex items-center">
+                                        <i data-lucide="clock" className="text-blue-500 mr-4 shrink-0"></i>
+                                        <p className="text-slate-300">24/7 Premium Priority Concierge</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="border-t border-slate-800 pt-12 flex flex-col md:flex-row justify-between items-center text-slate-500 text-xs font-bold uppercase tracking-widest">
+                            <p>© 2026 TIKETIFY GLOBAL EVENTS LTD. ALL RIGHTS RESERVED.</p>
+                            <div className="flex space-x-8 mt-6 md:mt-0">
+                                <a href="#">Privacy</a>
+                                <a href="#">Terms</a>
+                                <a href="#">Cookies</a>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            );
+
+            const HomePage = () => (
+                <div className="animate-fade-in">
+                    {/* Hero */}
+                    <section className="relative h-screen flex items-center overflow-hidden bg-slate-950">
+                        <div className="absolute inset-0 opacity-50">
+                            <img src="https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=2000" className="w-full h-full object-cover scale-105" alt="Hero" />
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-transparent"></div>
+                        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                            <div className="max-w-3xl">
+                                <div className="inline-flex items-center bg-blue-600/30 border border-blue-500/50 text-blue-400 px-5 py-2 rounded-full text-[10px] font-black tracking-[0.3em] uppercase mb-8">
+                                    <i data-lucide="zap" className="w-4 h-4 mr-2"></i> Elite Event Access
+                                </div>
+                                <h1 className="text-6xl md:text-8xl font-black text-white leading-[0.9] mb-8 tracking-tighter italic uppercase">
+                                    Witness <br/><span className="text-blue-500">History.</span>
+                                </h1>
+                                <p className="text-xl text-slate-300 mb-12 leading-relaxed max-w-xl">
+                                    Tiketify is the world's most trusted secondary marketplace for sold-out events. We bridge the gap between passion and the pitch.
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-6">
+                                    <button onClick={() => navigate('champions-league')} className="px-10 py-5 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition-all flex items-center justify-center shadow-2xl shadow-blue-600/30">
+                                        GET UCL FINAL TICKETS <i data-lucide="chevron-right" className="ml-2"></i>
+                                    </button>
+                                    <button className="px-10 py-5 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-2xl font-black text-lg hover:bg-white/20 transition-all">
+                                        BROWSE ALL EVENTS
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Why Tiketify */}
+                    <section className="py-32 bg-white">
+                        <div className="max-w-7xl mx-auto px-4">
+                            <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+                                <div className="max-w-2xl">
+                                    <h2 className="text-5xl font-black text-slate-900 tracking-tighter mb-6 uppercase">Why Millions Trust <span className="text-blue-600">Tiketify?</span></h2>
+                                    <p className="text-slate-500 text-lg">We've spent a decade building the world's most secure pipeline for sports and entertainment access.</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                {[
+                                    { icon: "shield-check", color: "text-green-500", title: "100% Verification", desc: "Every physical and digital ticket passes through our proprietary 12-point authentication lab." },
+                                    { icon: "globe", color: "text-blue-500", title: "Global Inventory", desc: "Access primary-market inventory and private club seats not available to the general public." },
+                                    { icon: "credit-card", color: "text-purple-500", title: "Instant Protection", desc: "Our Buyer Shield guarantees a full refund or upgrade if your event is disrupted." }
+                                ].map((item, i) => (
+                                    <div key={i} className="p-10 rounded-[2.5rem] bg-slate-50 border border-slate-100 hover:shadow-2xl hover:shadow-blue-600/5 transition-all group">
+                                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 transition-transform">
+                                            <i data-lucide={item.icon} className={`${item.color} w-8 h-8`}></i>
+                                        </div>
+                                        <h3 className="text-2xl font-bold mb-4">{item.title}</h3>
+                                        <p className="text-slate-600 leading-relaxed">{item.desc}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Historic Sales */}
+                    <section className="py-32 bg-slate-50 overflow-hidden">
+                        <div className="max-w-7xl mx-auto px-4">
+                            <div className="flex justify-between items-center mb-16">
+                                <h2 className="text-4xl font-black tracking-tighter uppercase italic">Historic <span className="text-blue-600">Deliveries</span></h2>
+                                <div className="hidden md:flex space-x-12">
+                                    <div className="text-center"><p className="text-3xl font-black">120K+</p><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Seats Filled</p></div>
+                                    <div className="text-center"><p className="text-3xl font-black text-blue-600">99.8%</p><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Success Rate</p></div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                {[
+                                    { event: "UCL Final 2025", location: "Munich, Germany", img: "https://images.unsplash.com/photo-1543351611-58f69d7c1781?auto=format&fit=crop&q=80&w=800" },
+                                    { event: "Super Bowl LIX", location: "New Orleans, USA", img: "https://images.unsplash.com/photo-1566733971217-d6a89e3901d2?auto=format&fit=crop&q=80&w=800" },
+                                    { event: "Wimbledon Final", location: "London, UK", img: "https://images.unsplash.com/photo-1592709823125-a191f07a2a5e?auto=format&fit=crop&q=80&w=800" },
+                                ].map((item, i) => (
+                                    <div key={i} className="group relative h-[500px] rounded-[2.5rem] overflow-hidden shadow-xl">
+                                        <img src={item.img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={item.event} />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                                        <div className="absolute bottom-0 left-0 p-10 w-full">
+                                            <h4 className="text-white text-3xl font-black italic uppercase mb-2">{item.event}</h4>
+                                            <div className="flex items-center text-slate-300 font-semibold"><i data-lucide="map-pin" className="w-4 h-4 mr-2"></i> {item.location}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* FAQ */}
+                    <section className="py-32 bg-white">
+                        <div className="max-w-4xl mx-auto px-4">
+                            <h2 className="text-4xl font-black text-center mb-20 uppercase tracking-tighter italic">Common <span className="text-blue-600">Queries</span></h2>
+                            <div className="space-y-6">
+                                {[
+                                    { q: "How do I receive my tickets?", a: "All tickets are delivered via the TIKETIFY Secure Node—our encrypted digital transfer system—or high-security physical courier for paper tickets." },
+                                    { q: "Are the tickets guaranteed to be authentic?", a: "Absolutely. We offer a 150% Money-Back Guarantee. We are the only platform that pays you a 50% premium if we fail to deliver your seat." },
+                                    { q: "Can I resell my tickets on TIKETIFY?", a: "Yes. Our white-glove seller portal allows you to list premium inventory for global buyers after a rigorous background and ticket check." },
+                                    { q: "What if the event is cancelled?", a: "In the case of cancellation, full refunds are issued within 72 hours. For postponements, your tickets remain locked and valid for the new date." }
+                                ].map((faq, i) => (
+                                    <div key={i} className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100">
+                                        <h4 className="text-xl font-bold mb-4 flex items-center">
+                                            <span className="w-8 h-8 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center mr-4 shrink-0 italic font-black">Q</span>
+                                            {faq.q}
+                                        </h4>
+                                        <p className="text-slate-600 ml-12 leading-relaxed">{faq.a}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            );
+
+            const ChampionsLeaguePage = () => {
+                const tickets = [
+                    { cat: "Category 1", price: 950, stock: "Only 12 Left", desc: "Main Stand Central. Unbeatable view of the trophy presentation and player tunnel.", color: "bg-blue-600" },
+                    { cat: "Category 2", price: 650, stock: "Limited Stock", desc: "Corner views in the lower tier. Experience the roar of the ultras up close.", color: "bg-teal-500" },
+                    { cat: "Category 3", price: 180, stock: "Selling Fast", desc: "Upper Tier Behind Goals. Great panoramic views of the tactical play.", color: "bg-orange-500" },
+                    { cat: "VIP Skybox", price: 4500, stock: "Only 2 Available", desc: "Private suite, Michelin-star dining, open bar, and cushioned luxury balcony seating.", color: "bg-amber-400" }
+                ];
+
+                const reviews = [
+                    { name: "John Thompson", text: "Incredible experience! The tickets were verified and delivered instantly to my app. Tiketify is the real deal.", img: "https://i.pravatar.cc/150?u=john" },
+                    { name: "Sarah Miller", text: "Got Cat 1 seats for the last final. Best view I've ever had at a match. Highly recommend their service.", img: "https://i.pravatar.cc/150?u=sarah" },
+                    { name: "Marco Rossi", text: "I was worried about resale but the support team was amazing. Everything worked perfectly at the stadium.", img: "https://i.pravatar.cc/150?u=marco" },
+                    { name: "Elena Garcia", text: "Simple, fast, and secure. I wouldn't buy premium tickets anywhere else now.", img: "https://i.pravatar.cc/150?u=elena" },
+                    { name: "David Chen", text: "The Skybox service exceeded expectations. Our corporate guests were very impressed.", img: "https://i.pravatar.cc/150?u=david" },
+                    { name: "Ahmed Hassan", text: "Great pricing for Category 2. Verified ticket transfer was smooth as silk.", img: "https://i.pravatar.cc/150?u=ahmed" },
+                    { name: "Sophie Laurent", text: "Tiketify is my go-to for all UCL matches. Reliable and professional every single time.", img: "https://i.pravatar.cc/150?u=sophie" },
+                    { name: "Mark Wilson", text: "Even when my team lost, the experience organized by Tiketify was top-notch.", img: "https://i.pravatar.cc/150?u=mark" },
+                    { name: "Lisa Wagner", text: "Prompt delivery and exactly the seats I paid for. No hidden fees.", img: "https://i.pravatar.cc/150?u=lisa" },
+                    { name: "Paolo Bruno", text: "A truly premium service. If you want the best seats, this is where you get them.", img: "https://i.pravatar.cc/150?u=paolo" },
+                    { name: "Isabella Smith", text: "Found tickets here when they were sold out everywhere else. Life saver!", img: "https://i.pravatar.cc/150?u=isabella" },
+                    { name: "Lucas Meyer", text: "The swap protection gives such peace of mind. Best feature in the market.", img: "https://i.pravatar.cc/150?u=lucas" },
+                    { name: "Chloe Adams", text: "Very professional communication. They kept me updated throughout the delivery.", img: "https://i.pravatar.cc/150?u=chloe" },
+                    { name: "Robert Taylor", text: "Verified tickets for the Puskás Aréna were perfect. Unforgettable night.", img: "https://i.pravatar.cc/150?u=robert" },
+                    { name: "Nina Petrov", text: "100% genuine. The QR code scanned first time at the gate. Fantastic.", img: "https://i.pravatar.cc/150?u=nina" }
+                ];
+
+                return (
+                    <div className="animate-fade-in bg-slate-50 min-h-screen">
+                        <header className="relative h-[60vh] bg-blue-950 flex items-center overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=2000" className="absolute inset-0 opacity-40 object-cover w-full h-full scale-105" alt="UCL Final" />
+                            <div className="absolute inset-0 bg-blue-950/40"></div>
+                            <div className="relative max-w-7xl mx-auto px-4 w-full">
+                                <div className="inline-block px-4 py-1.5 bg-blue-600 text-[10px] font-black uppercase tracking-[0.4em] text-white rounded-full mb-8 shadow-2xl">Official Resale Hub</div>
+                                <h1 className="text-6xl md:text-8xl font-black text-white italic tracking-tighter uppercase leading-none">
+                                    THE FINAL <br/><span className="text-blue-400">BUDAPEST 2026</span>
+                                </h1>
+                                <div className="flex flex-wrap gap-8 mt-10 text-white font-bold">
+                                    <div className="flex items-center"><i data-lucide="map-pin" className="mr-3 text-blue-400"></i> Puskás Aréna, Hungary</div>
+                                    <div className="flex items-center"><i data-lucide="clock" className="mr-3 text-blue-400"></i> 30 May 2026 • 21:00 CET</div>
+                                </div>
+                            </div>
+                        </header>
+
+                        <section className="py-20 -mt-20 relative z-20 max-w-7xl mx-auto px-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                                <div className="lg:col-span-4 space-y-6">
+                                    <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-blue-900/5 border border-slate-100">
+                                        <h3 className="text-2xl font-black mb-8 uppercase italic tracking-tighter">Match Overview</h3>
+                                        <div className="space-y-8">
+                                            <div className="flex items-center justify-between">
+                                                <div className="text-center"><div className="w-16 h-16 bg-slate-100 rounded-full mb-2 mx-auto flex items-center justify-center font-black">PSG</div><p className="text-[10px] font-black">PARIS</p></div>
+                                                <div className="text-2xl font-black italic text-slate-300">VS</div>
+                                                <div className="text-center"><div className="w-16 h-16 bg-slate-100 rounded-full mb-2 mx-auto flex items-center justify-center font-black">ARS</div><p className="text-[10px] font-black">ARSENAL</p></div>
+                                            </div>
+                                            <div className="border-t pt-8">
+                                                <div className="flex justify-between text-sm mb-2"><span className="text-slate-400 font-bold uppercase">Stadium</span><span className="font-black uppercase">Puskás Aréna</span></div>
+                                                <div className="flex justify-between text-sm mb-2"><span className="text-slate-400 font-bold uppercase">Capacity</span><span className="font-black uppercase">67,215</span></div>
+                                                <div className="flex justify-between text-sm"><span className="text-slate-400 font-bold uppercase">Status</span><span className="text-green-500 font-black uppercase">Tickets Live</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-blue-600 p-10 rounded-[2.5rem] text-white shadow-2xl shadow-blue-600/30">
+                                        <h4 className="text-2xl font-black mb-4 italic uppercase tracking-tighter">Tiketify Protection</h4>
+                                        <p className="text-blue-100 mb-8 font-medium">Your purchase is secured by our elite Buyer Shield protection program.</p>
+                                        <ul className="space-y-4">
+                                            <li className="flex items-center font-bold text-sm"><i data-lucide="check-circle-2" className="mr-3 w-5 h-5"></i> Authentic Ticket Guarantee</li>
+                                            <li className="flex items-center font-bold text-sm"><i data-lucide="check-circle-2" className="mr-3 w-5 h-5"></i> On-Time Digital Delivery</li>
+                                            <li className="flex items-center font-bold text-sm"><i data-lucide="check-circle-2" className="mr-3 w-5 h-5"></i> 150% Refund on Fail</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div className="lg:col-span-8">
+                                    <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-blue-900/5 border border-slate-100">
+                                        <div className="flex justify-between items-center mb-10">
+                                            <h3 className="text-3xl font-black italic uppercase tracking-tighter">Available Inventory</h3>
+                                            <span className="text-[10px] font-black bg-slate-100 px-3 py-1 rounded text-slate-500 tracking-widest">CURRENCY: EUR €</span>
+                                        </div>
+                                        <div className="space-y-6">
+                                            {tickets.map((t, idx) => (
+                                                <div key={idx} className="group p-8 border border-slate-100 rounded-[2rem] hover:border-blue-500 hover:bg-blue-50/20 transition-all flex flex-col md:flex-row items-center gap-8">
+                                                    <div className={`w-3 h-20 rounded-full shrink-0 ${t.color}`}></div>
+                                                    <div className="flex-1 text-center md:text-left">
+                                                        <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
+                                                            <h4 className="text-2xl font-black italic uppercase tracking-tighter">{t.cat}</h4>
+                                                            <span className="px-3 py-1 bg-red-100 text-red-600 text-[10px] font-black uppercase rounded">{t.stock}</span>
+                                                        </div>
+                                                        <p className="text-slate-500 text-sm leading-relaxed max-w-md">{t.desc}</p>
+                                                    </div>
+                                                    <div className="text-center md:text-right min-w-[140px]">
+                                                        <p className="text-3xl font-black italic tracking-tighter">€{t.price.toLocaleString()}</p>
+                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fixed Price</p>
+                                                    </div>
+                                                    <a 
+                                                        href={`mailto:gonapyoung@gmail.com?subject=TIKETIFY ORDER: ${t.cat} - UCL Final 2026&body=Hello Tiketify Team,%0D%0A%0D%0AI would like to secure the following ticket:%0D%0A%0D%0ACategory: ${t.cat}%0D%0APrice: €${t.price}%0D%0AEvent: UEFA Champions League Final 2026 - Budapest%0D%0A%0D%0APlease provide payment instructions.`}
+                                                        className="w-full md:w-auto px-10 py-4 bg-slate-950 text-white font-black rounded-2xl hover:bg-blue-600 transition-all shadow-xl text-sm uppercase tracking-widest text-center"
+                                                    >
+                                                        Buy Now!!
+                                                    </a>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="mt-12 text-center text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                                            Prices fluctuate based on market demand. All sales verified by Tiketify HQ.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* 15 Moving Reviews Marquee */}
+                        <section className="py-20 bg-white overflow-hidden border-y border-slate-100">
+                            <div className="text-center mb-12">
+                                <h2 className="text-3xl font-black uppercase tracking-tighter italic">Recent <span className="text-blue-600">Client Reviews</span></h2>
+                            </div>
+                            <div className="marquee-container relative flex overflow-x-hidden">
+                                <div className="animate-marquee flex whitespace-nowrap">
+                                    {[...reviews, ...reviews].map((rev, i) => (
+                                        <div key={i} className="flex-none w-[400px] mx-6 p-8 bg-slate-50 border border-slate-100 rounded-[2rem] shadow-sm">
+                                            <div className="flex items-center mb-4">
+                                                <div className="w-14 h-14 rounded-full overflow-hidden mr-4 border-2 border-blue-500 shrink-0">
+                                                    <img src={rev.img} className="w-full h-full object-cover" alt={rev.name} />
+                                                </div>
+                                                <div className="overflow-hidden">
+                                                    <p className="text-sm font-black uppercase tracking-tight text-slate-900 truncate">{rev.name}</p>
+                                                    <div className="flex text-yellow-400">
+                                                        {[...Array(5)].map((_, j) => <i key={j} data-lucide="star" className="w-3 h-3 fill-current"></i>)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <p className="text-slate-600 text-sm italic leading-relaxed whitespace-normal">"{rev.text}"</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* UCL Specific FAQ Section */}
+                        <section className="py-32 bg-slate-50">
+                            <div className="max-w-4xl mx-auto px-4">
+                                <h2 className="text-4xl font-black text-center mb-20 uppercase tracking-tighter italic">Frequently <span className="text-blue-600">Asked Questions</span></h2>
+                                <div className="space-y-6">
+                                    {[
+                                        { q: "Are tickets guaranteed for the 2026 Final?", a: "Yes. TIKETIFY operates through a vetted network of season ticket holders and corporate partners. Every purchase includes our \"Secure-Transfer\" guarantee ensuring your entry to the Puskás Aréna." },
+                                        { q: "How and when will I receive my tickets?", a: "UEFA typically releases mobile tickets via the official \"UEFA Mobile Tickets\" app 7-10 days before the event. We will guide you through the secure transfer process to your mobile device." },
+                                        { q: "What happens if the teams I support don't make it?", a: "The demand for UCL Final tickets is based on the event's prestige. However, TIKETIFY offers an optional \"Swap Protection\" allowing you to trade your tickets for another event if your team is eliminated before the semi-finals." },
+                                        { q: "Is TIKETIFY affiliated with UEFA?", a: "No, TIKETIFY is a secondary market resale brand. We specialize in providing access to sold-out events and premium experiences that are no longer available through primary box offices." }
+                                    ].map((faq, i) => (
+                                        <div key={i} className="p-10 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl shadow-blue-900/5">
+                                            <h4 className="text-xl font-bold mb-4 flex items-start">
+                                                <span className="w-10 h-10 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center mr-5 shrink-0 italic font-black shadow-lg shadow-blue-600/20">?</span>
+                                                <span className="pt-1">{faq.q}</span>
+                                            </h4>
+                                            <p className="text-slate-600 ml-15 pl-12 leading-relaxed text-lg">{faq.a}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col selection:bg-blue-100 selection:text-blue-900">
+                    <Navbar />
+                    <main className="flex-grow pt-20">
+                        {activePage === 'home' ? <HomePage /> : <ChampionsLeaguePage />}
+                    </main>
+                    <Footer />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
